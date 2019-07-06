@@ -44,12 +44,12 @@ def resize(input_image):
         return resized
 def Hist(input_image):
         
-        
+        plotHisto(input_image)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         cl1 = clahe.apply(img)
         res = np.hstack((input_image, cl1)) 
         res=resize(res)
-        
+        plotHisto(res)
         cv2.imshow('image1', res)
 
 img = cv2.imread('histo.tif',0)
@@ -57,7 +57,7 @@ img = cv2.imread('histo.tif',0)
 #log(img)
 
 #cv2.imshow('image',img)
-#power(img)
+
 Hist(img)
 
 
