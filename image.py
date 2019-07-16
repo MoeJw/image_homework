@@ -1,66 +1,63 @@
-import numpy as np
+from PIL import Image, ImageDraw
 import cv2
-from matplotlib import pyplot as plt
-def add(input_image1,input_image2):
-    img=input_image1+input_image2
-    cv2.imshow('image',img)
-    pass
-def sub(input_image1,input_image2):
-    img=input_image1-input_image2
-    cv2.imshow('image',img)
-    pass
-def mult(input_image1,input_image2):
-    img=input_image1*input_image2
-    cv2.imshow('image',img)
-    pass
-def div(input_image1,input_image2):
-    img=input_image1/input_image2
-    cv2.imshow('image',img)
-    pass
-def log(input_image):
+import numpy as np
+def value(input_image,input_pixels,offset,l,draw):
+    for x in range(offset, input_image.width - offset):
+        for y in range(offset, input_image.height - offset):
+            acc=0
+            for a in range(len(l)):
+                for b in range(len(l)):
+                    xn = x + a - offset
+                    yn = y + b - offset
+                    pixel = input_pixels[xn, yn]
+                    acc+= pixel * l[a][b]
+            draw.point((x, y), (int(acc), int(acc), int(acc)))
+
+def filter(type):
+    input_image = Image.open("histo.tif")
+    input_pixels = input_image.load()
+    img2 = cv2.imread('histo.tif',0)
+    l=[]
+    if(type==1):
+            for y in range(3):
+             l.append(map(float,raw_input("enter  row"+str(y+1)+" coefficients :").split()))  
+    if(type==2):
+        l=[[-1, -1, -1],[-1, 9, -1],[-1, -1, -1]]
+    elif(type==3):
+        #l = [[1/16.0, 2/16.0, 1/16.0],[2/16.0, 4/16.0, 2/16.0],[2/16.0, 2/16.0, 1/16.0]]
+        l=[[1/9.0, 1/9.0, 1/9.0],[1/9.0, 1/9.0, 1/9.0],[1/9.0, 1/9.0, 1/9.0]]
+    print(l)
+
+    offset = len(l) // 2
+
+
+    output_image = Image.new("RGB", input_image.size)
+    draw = ImageDraw.Draw(output_image)
+    value(input_image,input_pixels,offset,l,draw)
     
-    img00 = np.uint8(5*np.log1p(img))
-    img2 = cv2.normalize(img00, img, 0, 255, cv2.NORM_MINMAX, dtype = cv2.CV_8U)
-    img2=resize(img2)
-    cv2.imshow('image',img2)
     
-    
-def power(input_image):
-    lookUpTable = np.empty((1,256), np.uint8)
-    for i in range(256):
-        lookUpTable[0,i] = np.clip(pow(i / 255.0, 0.4) * 255.0, 0, 255)
-    res = cv2.LUT(input_image, lookUpTable)
-    res=resize(res)
-    cv2.imshow('image',res)
-def plotHisto(img):
-    plt.hist(img.ravel(),256,[0,256]); plt.show()
-    pass
-def resize(input_image):
-        scale_percent = 60
-        width = int(input_image.shape[1] * scale_percent / 100)
-        height = int(input_image.shape[0] * scale_percent / 100)
-        dim = (width, height)
-        resized = cv2.resize(input_image, dim, interpolation = cv2.INTER_AREA)
-        return resized
-def Hist(input_image):
         
-        plotHisto(input_image)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        cl1 = clahe.apply(img)
-        res = np.hstack((input_image, cl1)) 
-        res=resize(res)
-        plotHisto(res)
-        cv2.imshow('image1', res)
-
-img = cv2.imread('histo.tif',0)
-
-#log(img)
-
-#cv2.imshow('image',img)
-
-Hist(img)
+    output_image.save("output.tif")                                          
 
 
+#l = [[-1, -1, -1],[-1, 9, -1],[-1, -1, -1]]
+#l = [[1/16.0, 2/16.0, 1/16.0],[2/16.0, 4/16.0, 2/16.0],[2/16.0, 2/16.0, 1/16.0]]
+print("1- enter  coefficients of the mask")
+print("2-Enhancement Using the Laplacian")
+print("3-unsharp Masking")
+type=int(raw_input("enter Number : "))
+
+filter(type)
+img = cv2.imread('output.tif',0)
+img2 = cv2.imread('histo.tif',0)
+if(type==3):
+    res = np.hstack(((img2-img)+img2, img2))
+else:
+    res = np.hstack((img, img2))
+
+
+cv2.imshow("output_image",res)
 k = cv2.waitKey(0)
 if k == 27:         # wait for ESC key to exit
     cv2.destroyAllWindows()
+    
